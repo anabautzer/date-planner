@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #F7E4E1 0%, transparent 60%),
+    linear-gradient(180deg, #FBF7F4 0%, #F4ECE7 100%);
+  background-attachment: fixed;
+  color: #4a3f41;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, quiet scrollbars to match the calm aesthetic */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #E8C7C8 transparent;
+}
+
+@layer components {
+  .card {
+    @apply rounded-3xl bg-white/70 backdrop-blur-sm border border-white/60 shadow-card p-5;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm
+      transition-all duration-200 select-none active:scale-95;
+  }
+
+  .chip-idle {
+    @apply border-sand bg-white/60 text-ink hover:border-blush hover:bg-blush/20;
+  }
+
+  .chip-on {
+    @apply border-rose bg-rose text-white shadow-soft;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3
+      text-sm font-semibold transition-all duration-200 active:scale-95 disabled:opacity-40
+      disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-wine text-white shadow-soft hover:bg-[#7a4d54];
+  }
+
+  .btn-ghost {
+    @apply btn bg-white/70 text-wine border border-sand hover:bg-white;
+  }
+
+  .field {
+    @apply w-full rounded-2xl border border-sand bg-white/70 px-4 py-3 text-sm text-ink
+      placeholder:text-mist focus:outline-none focus:ring-2 focus:ring-blush;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold text-ink;
+  }
+}
