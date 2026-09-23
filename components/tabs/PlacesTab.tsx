@@ -19,6 +19,7 @@ const norm = (s: string) => s.trim().toLowerCase();
 export default function PlacesTab() {
   const { isHost, me, other, updateMe, matches } = usePlanner();
   const [query, setQuery] = useState('');
+  const [duplicateError, setDuplicateError] = useState(false);
   const [suggestions, setSuggestions] = useState<
     { name: string; category: string }[]
   >([]);
@@ -61,6 +62,16 @@ export default function PlacesTab() {
 
   const addPlace = (name: string, category: string) => {
     if (!name.trim()) return;
+    // Same name (case/whitespace-insensitive) already in either list — ranks
+    // are keyed by name, so a duplicate would share/steal the same rank.
+    const taken = [...me.places, ...(other?.places ?? [])].some(
+      (p) => norm(p.name) === norm(name)
+    );
+    if (taken) {
+      setDuplicateError(true);
+      setQuery(''); // closes the dropdown so the message is visible
+      return;
+    }
     const place: Place = { id: uid(), name: name.trim(), category };
     updateMe({ places: [...me.places, place] });
     setQuery('');
@@ -145,7 +156,10 @@ export default function PlacesTab() {
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setDuplicateError(false);
+            }}
             placeholder="Buscar café, parque, restaurante…"
             className="field"
           />
@@ -168,6 +182,9 @@ export default function PlacesTab() {
             </ul>
           </PortalDropdown>
         </div>
+        {duplicateError && (
+          <p className="text-xs text-rose">Esse lugar já está na lista.</p>
+        )}
         {query.trim() && suggestions.length === 0 && (
           <button
             onClick={() => addPlace(query, 'Personalizado')}

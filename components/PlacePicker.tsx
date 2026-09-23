@@ -44,6 +44,7 @@ export default function PlacePicker({
   maxRank?: number;
 }) {
   const [query, setQuery] = useState('');
+  const [duplicateError, setDuplicateError] = useState(false);
   const [suggestions, setSuggestions] = useState<
     { name: string; category: string }[]
   >([]);
@@ -83,6 +84,16 @@ export default function PlacePicker({
 
   const addItem = (name: string, category: string) => {
     if (!name.trim()) return;
+    // Same name (case/whitespace-insensitive) already in either list — ranks
+    // are keyed by name, so a duplicate would share/steal the same rank.
+    const taken = [...items, ...(otherItems ?? [])].some(
+      (p) => norm(p.name) === norm(name)
+    );
+    if (taken) {
+      setDuplicateError(true);
+      setQuery(''); // closes the dropdown so the message is visible
+      return;
+    }
     onItemsChange([...items, { id: uid(), name: name.trim(), category }]);
     setQuery('');
   };
@@ -140,7 +151,10 @@ export default function PlacePicker({
         <input
           ref={inputRef}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setDuplicateError(false);
+          }}
           placeholder={searchPlaceholder}
           className="field"
         />
@@ -161,6 +175,9 @@ export default function PlacePicker({
           </ul>
         </PortalDropdown>
       </div>
+      {duplicateError && (
+        <p className="text-xs text-rose">Esse lugar já está na lista.</p>
+      )}
       {query.trim() && suggestions.length === 0 && (
         <button onClick={() => addItem(query, addPrompt)} className="btn-ghost w-full">
           <Plus size={16} /> Adicionar “{query.trim()}”
