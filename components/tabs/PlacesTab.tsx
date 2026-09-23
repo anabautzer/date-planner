@@ -79,7 +79,7 @@ export default function PlacesTab() {
     updateMe({ placeRanks: toggleRank(me.placeRanks, name) });
   };
   const atCap = me.placeRanks.length >= MAX_RANK;
-  const hasUnranked = !atCap && me.places.some((p) => !rankOf(me.placeRanks, p.name));
+  const showRankHint = !atCap; // until the top 3 is complete
 
   const closenessByName = new Map(
     matches.places.map((m) => [norm(m.id), m.closeness])
@@ -184,7 +184,7 @@ export default function PlacesTab() {
           <p className="text-xs font-semibold uppercase tracking-wide text-mist">
             Seus lugares
           </p>
-          {hasUnranked && <RankHint />}
+          {showRankHint && <RankHint />}
           {me.places.map((p) => {
             const rank = rankOf(me.placeRanks, p.name);
             const closeness = closenessByName.get(norm(p.name));

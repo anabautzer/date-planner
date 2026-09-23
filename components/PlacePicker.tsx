@@ -96,7 +96,7 @@ export default function PlacePicker({
     onRanksChange(toggleRank(ranks, name, maxRank));
   };
   const atCap = ranks.length >= maxRank;
-  const hasUnranked = !atCap && items.some((p) => !rankOf(ranks, p.name));
+  const showRankHint = !atCap; // until the top 3 is complete
 
   return (
     <div className="card relative z-20 space-y-3">
@@ -169,7 +169,7 @@ export default function PlacePicker({
 
       {items.length > 0 && (
         <div className="space-y-2">
-          {hasUnranked && <RankHint />}
+          {showRankHint && <RankHint />}
           {items.map((p) => {
             const rank = rankOf(ranks, p.name);
             const closeness = closenessByName.get(norm(p.name));
