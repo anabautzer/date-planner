@@ -93,7 +93,7 @@ export interface Matches {
   cuisines: RankedMatch<string>[];
   drinks: RankedMatch<string>[];
   activities: RankedMatch<string>[];
-  /** Rough 0–100 "vibe" score, just for a friendly meter. */
+  /** 0–100 "vibe" score: how much both picked the same things (see computeMatches). */
   score: number;
   hasAny: boolean;
 }
@@ -130,23 +130,37 @@ export function computeMatches(plan: PlanData): Matches {
   const drinks = rankedIntersection(host.drinks, guest.drinks);
   const activities = rankedIntersection(host.activities, guest.activities);
 
-  // Each category contributes up to a fixed share of 100, capped once its
-  // own "full marks" count is hit — so one saturated category can't alone
-  // push the score to 100%. Reaching a high score needs matches spread
-  // across most categories.
-  const share = (count: number, forFull: number, weight: number) =>
-    (Math.min(count, forFull) / forFull) * weight;
+  // Score = how much the two picked the same things. Per category:
+  // matches ÷ the bigger of the two selections (host 3 + guest 2, both
+  // matching → 2/3; identical picks → 100%). Categories nobody filled in
+  // are left out, and the weights of the rest are rescaled to add up to
+  // 100 — so leaving e.g. bars empty on both sides doesn't cap the score.
+  const guestDates = new Set(guest.slots.map((s) => s.date));
+  const sharedDates = Array.from(guestDates).filter((d) => hostDates.has(d)).length;
 
-  const score = Math.round(
-    share(slots.length, 2, 15) +
-      share(places.length, 1, 15) +
-      share(movies.length, 2, 15) +
-      share(restaurants.length, 1, 10) +
-      share(bars.length, 1, 10) +
-      share(cuisines.length, 3, 15) +
-      share(drinks.length, 2, 10) +
-      share(activities.length, 3, 10)
-  );
+  const categories: { matched: number; hostCount: number; guestCount: number; weight: number }[] = [
+    { matched: sharedDates, hostCount: hostDates.size, guestCount: guestDates.size, weight: 15 },
+    { matched: places.length, hostCount: host.placeRanks.length, guestCount: guest.placeRanks.length, weight: 15 },
+    { matched: movies.length, hostCount: host.movies.length, guestCount: guest.movies.length, weight: 15 },
+    { matched: restaurants.length, hostCount: host.restaurantRanks.length, guestCount: guest.restaurantRanks.length, weight: 10 },
+    { matched: bars.length, hostCount: host.barRanks.length, guestCount: guest.barRanks.length, weight: 10 },
+    { matched: cuisines.length, hostCount: host.cuisines.length, guestCount: guest.cuisines.length, weight: 15 },
+    { matched: drinks.length, hostCount: host.drinks.length, guestCount: guest.drinks.length, weight: 10 },
+    { matched: activities.length, hostCount: host.activities.length, guestCount: guest.activities.length, weight: 10 },
+  ];
+  const active = categories.filter((c) => c.hostCount + c.guestCount > 0);
+  const totalWeight = active.reduce((sum, c) => sum + c.weight, 0);
+  const score =
+    totalWeight === 0
+      ? 0
+      : Math.round(
+          (active.reduce(
+            (sum, c) => sum + (c.matched / Math.max(c.hostCount, c.guestCount)) * c.weight,
+            0
+          ) /
+            totalWeight) *
+            100
+        );
 
   const hasAny =
     slots.length +
