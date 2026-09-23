@@ -9,6 +9,7 @@ import { IS_DEMO } from '@/lib/demo';
 import { toggleRank, rankOf, MAX_RANK } from '@/lib/ranking';
 import { CLOSENESS_LABEL, CLOSENESS_LABEL_SHORT } from '@/lib/matching';
 import RankTapButton from '@/components/RankTapButton';
+import RankHint from '@/components/RankHint';
 import PortalDropdown from '@/components/PortalDropdown';
 import type { Place } from '@/lib/types';
 
@@ -78,6 +79,7 @@ export default function PlacesTab() {
     updateMe({ placeRanks: toggleRank(me.placeRanks, name) });
   };
   const atCap = me.placeRanks.length >= MAX_RANK;
+  const hasUnranked = !atCap && me.places.some((p) => !rankOf(me.placeRanks, p.name));
 
   const closenessByName = new Map(
     matches.places.map((m) => [norm(m.id), m.closeness])
@@ -182,6 +184,7 @@ export default function PlacesTab() {
           <p className="text-xs font-semibold uppercase tracking-wide text-mist">
             Seus lugares
           </p>
+          {hasUnranked && <RankHint />}
           {me.places.map((p) => {
             const rank = rankOf(me.placeRanks, p.name);
             const closeness = closenessByName.get(norm(p.name));

@@ -7,6 +7,7 @@ import { IS_DEMO } from '@/lib/demo';
 import { toggleRank, rankOf } from '@/lib/ranking';
 import { CLOSENESS_LABEL_SHORT, type Closeness } from '@/lib/matching';
 import RankTapButton from '@/components/RankTapButton';
+import RankHint from '@/components/RankHint';
 import PortalDropdown from '@/components/PortalDropdown';
 import type { Place } from '@/lib/types';
 
@@ -95,6 +96,7 @@ export default function PlacePicker({
     onRanksChange(toggleRank(ranks, name, maxRank));
   };
   const atCap = ranks.length >= maxRank;
+  const hasUnranked = !atCap && items.some((p) => !rankOf(ranks, p.name));
 
   return (
     <div className="card relative z-20 space-y-3">
@@ -167,6 +169,7 @@ export default function PlacePicker({
 
       {items.length > 0 && (
         <div className="space-y-2">
+          {hasUnranked && <RankHint />}
           {items.map((p) => {
             const rank = rankOf(ranks, p.name);
             const closeness = closenessByName.get(norm(p.name));
