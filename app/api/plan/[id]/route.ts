@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPlan, patchPlan, assertReasonableSize } from '@/lib/store';
+import { IS_DEMO } from '@/lib/demo';
 
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, {
@@ -8,10 +9,15 @@ function json(data: unknown, status = 200) {
   });
 }
 
+// Demo invites live in the browser (lib/demoStore.ts) — never touch Redis.
+const demoForbidden = () =>
+  json({ error: 'Indisponível no modo demonstração' }, 403);
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  if (IS_DEMO) return demoForbidden();
   try {
     const plan = await getPlan(params.id);
     if (!plan) return json({ error: 'Convite não encontrado ou expirado' }, 404);
@@ -28,6 +34,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  if (IS_DEMO) return demoForbidden();
   let body: any;
   try {
     body = await req.json();

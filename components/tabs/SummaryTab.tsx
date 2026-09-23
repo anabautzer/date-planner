@@ -11,10 +11,14 @@ import {
   RefreshCw,
   Loader2,
   BookmarkCheck,
+  Wand2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePlanner } from '@/lib/PlannerContext';
 import { useNowPlaying } from '@/lib/useNowPlaying';
+import { IS_DEMO } from '@/lib/demo';
+import { createDemoPlan, getDemoPlan, patchDemoPlan } from '@/lib/demoStore';
+import { buildDemoGuest } from '@/lib/demoGuest';
 import {
   computeMatches,
   CLOSENESS_LABEL,
@@ -93,6 +97,7 @@ export default function SummaryTab() {
     matches,
     planId,
     setPlanId,
+    celebrate,
   } = usePlanner();
   const { movies } = useNowPlaying();
 
@@ -128,6 +133,7 @@ export default function SummaryTab() {
           planId={planId}
           setPlanId={setPlanId}
           movies={movies}
+          celebrate={celebrate}
         />
       ) : (
         <GuestPanel me={me} matches={matches} movies={movies} />
@@ -143,12 +149,14 @@ function HostPanel({
   planId,
   setPlanId,
   movies,
+  celebrate,
 }: {
   plan: PlanData;
   setPlan: React.Dispatch<React.SetStateAction<PlanData>>;
   planId: string | null;
   setPlanId: (id: string) => void;
   movies: Movie[];
+  celebrate: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -168,7 +176,23 @@ function HostPanel({
     setError('');
     setBusy(true);
     try {
-      if (planId) {
+      if (IS_DEMO) {
+        // Demo: saved in this browser only — see lib/demoStore.ts.
+        if (planId) {
+          if (!patchDemoPlan(planId, { host: plan.host })) {
+            throw new Error('Falha ao atualizar');
+          }
+        } else {
+          setPlanId(
+            createDemoPlan({
+              ...plan,
+              hostName,
+              guestName: plan.guestName.trim(),
+              guest: null,
+            })
+          );
+        }
+      } else if (planId) {
         const res = await fetch(`/api/plan/${planId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -201,6 +225,14 @@ function HostPanel({
     if (!planId) return;
     setRefreshing(true);
     try {
+      if (IS_DEMO) {
+        const stored = getDemoPlan(planId);
+        if (stored) {
+          setPlan((prev) => ({ ...prev, guest: stored.guest }));
+          setLastChecked(new Date());
+        }
+        return;
+      }
       const res = await fetch(`/api/plan/${planId}`);
       const data = await res.json();
       if (res.ok && data.plan) {
@@ -212,8 +244,31 @@ function HostPanel({
     }
   };
 
+  // Demo only: fills plan.guest with answers mirrored from the Host's picks
+  // (see lib/demoGuest.ts), saves them like a real guest would, then fires
+  // the same MatchBurst a guest sees.
+  const simulateGuest = () => {
+    if (!planId) return;
+    const guest = buildDemoGuest(plan.host, movies);
+    patchDemoPlan(planId, { guest });
+    setPlan((prev) => ({ ...prev, guest }));
+    setLastChecked(new Date());
+    celebrate();
+  };
+
   const guestAnswered = !!plan.guest;
   const guestMatches = computeMatches(plan);
+  const badgesShown = new Set(
+    [
+      ...guestMatches.places,
+      ...guestMatches.restaurants,
+      ...guestMatches.bars,
+      ...guestMatches.movies,
+      ...guestMatches.cuisines,
+      ...guestMatches.drinks,
+      ...guestMatches.activities,
+    ].map((m) => m.closeness)
+  );
 
   const shareWhatsApp = () => {
     if (!guestLink) return;
@@ -278,8 +333,9 @@ function HostPanel({
             />
             <p className="flex items-start gap-1.5 text-[11px] text-mist">
               <BookmarkCheck size={13} className="mt-0.5 flex-none" />
-              Salve esse segundo link — é como você volta aqui depois pra ver
-              as respostas. Vale por 30 dias.
+              {IS_DEMO
+                ? 'Modo demonstração: os links funcionam só neste navegador.'
+                : 'Salve esse segundo link — é como você volta aqui depois pra ver as respostas. Vale por 30 dias.'}
             </p>
           </motion.div>
         )}
@@ -309,6 +365,20 @@ function HostPanel({
               Ainda sem respostas. Volte aqui depois de enviar o link, ou
               clique em Atualizar.
             </p>
+          )}
+
+          {IS_DEMO && (
+            <>
+              <button onClick={simulateGuest} className="btn-ghost w-full">
+                <Wand2 size={16} /> Simular resposta do convidado
+              </button>
+              {guestAnswered && badgesShown.size < 3 && (
+                <p className="text-center text-[11px] text-mist">
+                  Escolha mais opções nas abas (ex.: 3+ filmes e culinárias) e
+                  simule de novo pra ver todos os selos.
+                </p>
+              )}
+            </>
           )}
 
           {guestAnswered && <MatchesRecap matches={guestMatches} movies={movies} />}

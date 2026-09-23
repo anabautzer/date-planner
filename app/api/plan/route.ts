@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPlan, assertReasonableSize } from '@/lib/store';
 import { emptyPerson } from '@/lib/types';
 import type { PlanData } from '@/lib/types';
+import { IS_DEMO } from '@/lib/demo';
 
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, {
@@ -13,6 +14,9 @@ function json(data: unknown, status = 200) {
 // Creates a new plan record (the Host's side) and returns its id.
 // The Host name is required server-side too — never trust client-only validation.
 export async function POST(req: NextRequest) {
+  // Demo invites live in the browser (lib/demoStore.ts) — never touch Redis.
+  if (IS_DEMO) return json({ error: 'Indisponível no modo demonstração' }, 403);
+
   let body: any;
   try {
     body = await req.json();

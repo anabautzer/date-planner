@@ -1,6 +1,8 @@
 import DatePlanner from '@/components/DatePlanner';
 import InviteNotFound from '@/components/InviteNotFound';
+import DemoPlanLoader from '@/components/DemoPlanLoader';
 import { getPlan } from '@/lib/store';
+import { IS_DEMO } from '@/lib/demo';
 import { emptyPlan, type Mode, type PlanData } from '@/lib/types';
 
 // The one route. It reads the URL to decide who's looking:
@@ -13,6 +15,11 @@ export default async function Home({
   searchParams: { mode?: string; id?: string };
 }) {
   const mode: Mode = searchParams.mode === 'guest' ? 'guest' : 'host';
+
+  // Demo: invites live in the browser, not in Redis — load them client-side.
+  if (IS_DEMO && (searchParams.id || mode === 'host')) {
+    return <DemoPlanLoader mode={mode} id={searchParams.id} />;
+  }
 
   if (searchParams.id) {
     const stored = await getPlan(searchParams.id);

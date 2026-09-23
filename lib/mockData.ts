@@ -80,6 +80,20 @@ export const PLACE_SUGGESTIONS: { name: string; category: string }[] = [
   { name: 'Cine Retrô', category: 'Cinema' },
   { name: 'Boliche Central', category: 'Entretenimento' },
   { name: 'Museu de Arte Moderna', category: 'Museu' },
+  // São Paulo restaurants & bars — also feed the Food tab's pickers in
+  // demo mode (NEXT_PUBLIC_DEMO_MODE), where /api/places is never called.
+  { name: 'Mocotó', category: 'Restaurante Brasileiro · Vila Medeiros' },
+  { name: 'Famiglia Mancini', category: 'Restaurante Italiano · Bela Vista' },
+  { name: 'Jiquitaia', category: 'Restaurante Brasileiro · Paraíso' },
+  { name: 'Bráz Pizzaria', category: 'Restaurante · Pizzaria · Moema' },
+  { name: 'Aizomê', category: 'Restaurante Japonês · Jardins' },
+  { name: 'Tordesilhas', category: 'Restaurante Brasileiro · Jardins' },
+  { name: 'Bar Brahma', category: 'Bar · Centro' },
+  { name: 'Bar da Dona Onça', category: 'Bar · Edifício Copan' },
+  { name: 'Riviera Bar', category: 'Bar · Consolação' },
+  { name: 'Guilhotina Bar', category: 'Bar de coquetéis · Pinheiros' },
+  { name: 'SubAstor', category: 'Bar de coquetéis · Vila Madalena' },
+  { name: 'Empório Alto dos Pinheiros', category: 'Bar · Cerveja artesanal' },
 ];
 
 export const CUISINES = [

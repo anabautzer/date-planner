@@ -12,6 +12,8 @@ import { useRouter } from 'next/navigation';
 import type { Mode, PlanData, Person } from './types';
 import { emptyPerson, normalizePlan } from './types';
 import { computeMatches, type Matches } from './matching';
+import { IS_DEMO } from './demo';
+import { patchDemoPlan } from './demoStore';
 
 // ─────────────────────────────────────────────────────────────
 // Central store. Every tab reads the plan and edits *its own side*.
@@ -55,6 +57,10 @@ interface PlannerCtx {
   syncStatus: SyncStatus;
   /** True right after a local draft was restored on load (Host only). */
   draftRestored: boolean;
+  /** Bumped by celebrate() — DatePlanner fires the MatchBurst on each change. */
+  celebrateSignal: number;
+  /** Explicitly fire the "Match!" burst (demo's simulated guest answer). */
+  celebrate: () => void;
 }
 
 const Ctx = createContext<PlannerCtx | null>(null);
@@ -74,6 +80,7 @@ export function PlannerProvider({
   const [planId, setPlanId] = useState<string | null>(initialPlanId);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [draftRestored, setDraftRestored] = useState(false);
+  const [celebrateSignal, setCelebrateSignal] = useState(0);
   const router = useRouter();
 
   const isHost = mode === 'host';
@@ -145,6 +152,11 @@ export function PlannerProvider({
     setSyncStatus('saving');
     const t = setTimeout(() => {
       const patch = isHost ? { host: plan.host } : { guest: plan.guest };
+      if (IS_DEMO) {
+        // Demo: saved in this browser only — see lib/demoStore.ts.
+        setSyncStatus(patchDemoPlan(planId, patch) ? 'saved' : 'error');
+        return;
+      }
       fetch(`/api/plan/${planId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -173,6 +185,8 @@ export function PlannerProvider({
     setPlanId,
     syncStatus,
     draftRestored,
+    celebrateSignal,
+    celebrate: () => setCelebrateSignal((n) => n + 1),
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

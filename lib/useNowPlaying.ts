@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { NOW_PLAYING, type Movie } from './mockData';
+import { IS_DEMO } from './demo';
 
 export type MoviesSource = 'loading' | 'live' | 'fallback';
 
@@ -10,9 +11,12 @@ export type MoviesSource = 'loading' | 'live' | 'fallback';
 // exist in the mock catalog, so each needs the live list to resolve titles.
 export function useNowPlaying() {
   const [movies, setMovies] = useState<Movie[]>(NOW_PLAYING);
-  const [source, setSource] = useState<MoviesSource>('loading');
+  const [source, setSource] = useState<MoviesSource>(
+    IS_DEMO ? 'fallback' : 'loading'
+  );
 
   useEffect(() => {
+    if (IS_DEMO) return; // demo: mock list only, never hits /api/movies
     let cancelled = false;
     fetch('/api/movies')
       .then((r) => r.json())

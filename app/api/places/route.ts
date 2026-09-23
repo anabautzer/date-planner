@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { IS_DEMO } from '@/lib/demo';
 
 // ─────────────────────────────────────────────────────────────
 // Server-side proxy for Google Places Autocomplete (New).
@@ -30,6 +31,9 @@ function json(data: unknown, status = 200) {
 const ALLOWED_TYPES = new Set(['restaurant', 'bar']);
 
 export async function GET(req: NextRequest) {
+  // Demo deploys never talk to Google — the client filters mock data.
+  if (IS_DEMO) return json({ suggestions: [] });
+
   const input = req.nextUrl.searchParams.get('input')?.trim();
   const typeParam = req.nextUrl.searchParams.get('type');
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;

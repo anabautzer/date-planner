@@ -24,7 +24,7 @@ const TAB_COMPONENTS: Record<TabId, () => JSX.Element> = {
 };
 
 function Shell() {
-  const { matches, isGuest } = usePlanner();
+  const { matches, isGuest, celebrateSignal } = usePlanner();
   const [tab, setTab] = useState<TabId>('schedule');
 
   // Switching tabs doesn't navigate, so the window keeps whatever scroll
@@ -54,6 +54,14 @@ function Shell() {
     }
     prevCount.current = totalMatches;
   }, [totalMatches, isGuest]);
+
+  // Explicit trigger (demo's "Simular resposta do convidado") — same burst.
+  useEffect(() => {
+    if (celebrateSignal === 0) return;
+    setBurst(true);
+    const t = setTimeout(() => setBurst(false), 1100);
+    return () => clearTimeout(t);
+  }, [celebrateSignal]);
 
   const ActiveTab = TAB_COMPONENTS[tab];
 

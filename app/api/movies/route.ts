@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { Movie } from '@/lib/mockData';
+import { IS_DEMO } from '@/lib/demo';
 
 // ─────────────────────────────────────────────────────────────
 // Server-side proxy for TMDB "now playing" — keeps the token off
@@ -35,6 +36,9 @@ function json(data: unknown, status = 200) {
 }
 
 export async function GET() {
+  // Demo deploys never talk to TMDB — the client uses mock data anyway.
+  if (IS_DEMO) return json({ movies: [] });
+
   const token = process.env.TMDB_API_TOKEN;
   if (!token) {
     return json({ error: 'TMDB_API_TOKEN não configurado', movies: [] });

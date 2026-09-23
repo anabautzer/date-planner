@@ -23,6 +23,52 @@ salvos). Veja o passo a passo de todas as chaves em
 
 ---
 
+## 🧪 Modo demonstração
+
+Pra mostrar o app (ex.: pra recrutadores) sem gastar nenhuma API, ligue:
+
+```bash
+NEXT_PUBLIC_DEMO_MODE=true
+```
+
+Com ela, o app funciona de ponta a ponta **sem nenhuma chamada** a TMDB,
+Google Places ou Upstash Redis:
+
+- Filmes e lugares vêm só de [`lib/mockData.ts`](lib/mockData.ts) (inclui
+  restaurantes e bares de São Paulo pra busca da aba Comida).
+- Convites e respostas ficam no **navegador** (`localStorage`, chave
+  `demo-plan:<id>`, com fallback em memória) via
+  [`lib/demoStore.ts`](lib/demoStore.ts). Os links do convidado e de
+  respostas funcionam em outras abas **do mesmo navegador**.
+- As rotas `/api/movies` e `/api/places` respondem vazio e `/api/plan/*`
+  responde `403` logo no início, sem ler nenhuma chave.
+- Na aba **Resumo** do Host, depois de gerar o convite, aparece o botão
+  **"Simular resposta do convidado"**: monta respostas a partir das escolhas
+  do Host ([`lib/demoGuest.ts`](lib/demoGuest.ts)) pra gerar os três selos
+  (✨ perfeito, 🌟 quase igual, 💫 deram match) e dispara a animação de Match.
+  Quanto mais coisas o Host escolher (ex.: 3 filmes + algumas culinárias),
+  mais garantido é aparecer um de cada.
+- Uma faixa discreta no topo avisa que é uma demonstração.
+
+A flag é lida só em [`lib/demo.ts`](lib/demo.ts) (`IS_DEMO`). Por ser
+`NEXT_PUBLIC_`, o valor é embutido **no build** — mudar exige rebuild
+(`npm run build` / novo deploy), não basta reiniciar.
+
+A ideia é ter um **segundo deploy na Vercel** (mesmo repositório, outro
+projeto) com `NEXT_PUBLIC_DEMO_MODE=true` e **nenhuma chave de API
+configurada**. Ausente ou `false`, o app se comporta exatamente como antes.
+
+Localmente:
+
+```bash
+# PowerShell
+$env:NEXT_PUBLIC_DEMO_MODE="true"; npm run dev
+# bash
+NEXT_PUBLIC_DEMO_MODE=true npm run dev
+```
+
+---
+
 ## 🔄 Como funciona o fluxo Host → Guest
 
 O app tem **uma única rota** (`/`) e decide o modo pela URL:
@@ -106,6 +152,8 @@ components/
   TabBar.tsx          Navegação inferior (pill animada com Framer Motion)
   MatchBurst.tsx      Animação sutil de "Match!"
   InviteNotFound.tsx  Tela amigável quando o id não existe/expirou
+  DemoBanner.tsx      Faixa "Modo demonstração" (só com IS_DEMO)
+  DemoPlanLoader.tsx  Carrega o convite do localStorage no modo demo
   PlacePicker.tsx     Buscador reutilizável (usado por restaurantes/bares na aba Comida)
   tabs/
     ScheduleTab.tsx   📅 Agenda & horários
@@ -122,6 +170,9 @@ lib/
   mockData.ts         Dados de exemplo (filmes, lugares, culinárias, bebidas, atividades)
   useNowPlaying.ts    Hook compartilhado (MoviesTab + SummaryTab) pra buscar filmes
   PlannerContext.tsx  Store central + regra Host/Guest + auto-save do Guest
+  demo.ts             Flag IS_DEMO (NEXT_PUBLIC_DEMO_MODE)
+  demoStore.ts        Persistência do modo demo no navegador (localStorage)
+  demoGuest.ts        Monta a resposta simulada do convidado (modo demo)
 ```
 
 ---

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Plus, X, Route, Navigation } from 'lucide-react';
 import { usePlanner } from '@/lib/PlannerContext';
 import { PLACE_SUGGESTIONS } from '@/lib/mockData';
+import { IS_DEMO } from '@/lib/demo';
 import { toggleRank, rankOf, MAX_RANK } from '@/lib/ranking';
 import { CLOSENESS_LABEL, CLOSENESS_LABEL_SHORT } from '@/lib/matching';
 import RankTapButton from '@/components/RankTapButton';
@@ -35,6 +36,11 @@ export default function PlacesTab() {
       PLACE_SUGGESTIONS.filter(
         (s) => norm(s.name).includes(norm(q)) || norm(s.category).includes(norm(q))
       ).slice(0, 8);
+
+    if (IS_DEMO) {
+      setSuggestions(localFallback()); // demo: never hits /api/places
+      return;
+    }
 
     const t = setTimeout(() => {
       fetch(`/api/places?input=${encodeURIComponent(q)}`)

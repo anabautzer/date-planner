@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapPin, Plus, X } from 'lucide-react';
 import { PLACE_SUGGESTIONS } from '@/lib/mockData';
+import { IS_DEMO } from '@/lib/demo';
 import { toggleRank, rankOf } from '@/lib/ranking';
 import { CLOSENESS_LABEL_SHORT, type Closeness } from '@/lib/matching';
 import RankTapButton from '@/components/RankTapButton';
@@ -57,6 +58,11 @@ export default function PlacePicker({
       PLACE_SUGGESTIONS.filter(
         (s) => norm(s.name).includes(norm(q)) || norm(s.category).includes(norm(q))
       ).slice(0, 8);
+
+    if (IS_DEMO) {
+      setSuggestions(localFallback()); // demo: never hits /api/places
+      return;
+    }
 
     const t = setTimeout(() => {
       fetch(`/api/places?input=${encodeURIComponent(q)}&type=${type}`)
